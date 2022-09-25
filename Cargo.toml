@@ -7,4 +7,5 @@ edition = "2021"
 crate-type = ['cdylib']
 
 [dependencies]
+anyhow = '1'
 jni = {version = '0.19'}

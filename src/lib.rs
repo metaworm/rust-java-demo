@@ -1,10 +1,16 @@
 use jni::objects::*;
+use jni::signature::JavaType;
 use jni::sys::{jint, jobject};
 use jni::JNIEnv;
 
+mod helper;
+
 #[no_mangle]
-pub unsafe extern "C" fn Java_pers_metaworm_RustJNI_init(env: JNIEnv, _class: JClass) {
+pub unsafe extern "C" fn Java_pers_metaworm_RustJNI_init(env: JNIEnv<'static>, _class: JClass) {
     println!("rust-java-demo inited");
+    if let Err(err) = helper::cache::init(env) {
+        println!("cached failed: {err:?}");
+    }
 }
 
 #[no_mangle]
@@ -88,7 +94,6 @@ fn call_java(env: &JNIEnv) {
             .to_string();
         println!("File.separator: {}", separator);
         assert_eq!(separator, format!("{}", std::path::MAIN_SEPARATOR));
-        // env.get_static_field_unchecked(class, field, ty)
 
         // 创建实例对象
         let file = env.new_object(
@@ -98,7 +103,12 @@ fn call_java(env: &JNIEnv) {
         )?;
 
         // 调用实例方法
-        let abs = env.call_method(file, "getAbsolutePath", "()Ljava/lang/String;", &[])?;
+        let abs = env.call_method_unchecked(
+            file,
+            helper::cache::get().File.getAbsolutePath,
+            JavaType::Object("Ljava/lang/String;".into()),
+            &[],
+        )?;
         let abs_path = env
             .get_string(abs.l()?.into())?
             .to_string_lossy()
